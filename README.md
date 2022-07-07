@@ -14,6 +14,9 @@ Min and Max values can be set via **QTY_MIN** and **QTY_MAX** constants.
 
 Styling is provided within the component.
 
+## Include the file: 
+
+    <script src='.your-path/src/component/quantity.js' type='module'></script>
 
 ## HTML Syntax: 
 
