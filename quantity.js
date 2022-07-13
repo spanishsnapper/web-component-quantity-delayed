@@ -22,8 +22,9 @@ class QuantityMinMax extends HTMLElement {
         this.attachShadow({mode: 'open'});
 
         // Global Vars: 
-        this.delayTimer; 
-        this.AJAX_DELAY = 1500; // How long to wait before updating ajax quantity.
+        this.delayTimer;        // To delay AJAX calls
+        this.qtyTimer;          // For mouseover event on modify quantity button
+        this.AJAX_DELAY = 1000; // How long to wait before updating ajax quantity.
         this.MIN_QTY = 1;       // Default minimum quantity
         this.MAX_QTY = 999;     // Default maximum quantity
         this.render();
@@ -32,7 +33,7 @@ class QuantityMinMax extends HTMLElement {
     // Fires when an instance was inserted into the document
     connectedCallback() {
 
-        console.warn("Quantity updater loaded");
+        // console.warn("Quantity updater loaded");
 
         
 
@@ -47,16 +48,17 @@ class QuantityMinMax extends HTMLElement {
 
     // Fires when an instance was removed from the document
     disconnectedCallback() {
-        console.warn("Quantity updater removed");
+        // console.warn("Quantity updater removed");
+        clearTimeout(this.delayTimer);
     }
 
 
     // Fires when an attribute was added, removed, or updated
     attributeChangedCallback(attrName, oldVal, newVal) {
         
-        console.log(attrName + " updated to " + newVal);
+        // console.log(attrName + " updated to " + newVal);
         
-        if (attrName=="quantity") {
+        if (attrName=="quantity" && oldVal !== newVal) {
             this.delayedQuantityUpdate();
         }
         
@@ -65,7 +67,7 @@ class QuantityMinMax extends HTMLElement {
     
     render(){
 
-        console.log("Initial Render");
+        // console.log("Initial Render");
 
         const style = document.createElement('style');
 
@@ -89,9 +91,13 @@ class QuantityMinMax extends HTMLElement {
         // Plus and Minus listeners: 
         minus_btn.innerText = "-";
         minus_btn.addEventListener("click", ()=> { this.modifyQty(-1) } );
+        minus_btn.addEventListener("mousedown", ()=> { this.qtyTimer = setInterval( ()=> { this.modifyQty(-1) }, 200 ) } );
+        minus_btn.addEventListener("mouseup", ()=> { clearInterval(this.qtyTimer); } );
 
         plus_btn.innerText = "+";
         plus_btn.addEventListener("click", ()=> { this.modifyQty(+1) } );
+        plus_btn.addEventListener("mousedown", ()=> { this.qtyTimer = setInterval( ()=> { this.modifyQty(+1) }, 200 ) } );
+        plus_btn.addEventListener("mouseup", ()=> { clearInterval(this.qtyTimer); } );
        
 
         wrapper.appendChild(minus_btn);
@@ -102,7 +108,7 @@ class QuantityMinMax extends HTMLElement {
 
         this.shadowRoot.append(style,wrapper);
 
-        this.updateStyle();
+        this.componentStyle();
        
     }
 
@@ -110,7 +116,7 @@ class QuantityMinMax extends HTMLElement {
     /** Update the quantity with buttons pressed */
     modifyQty(n){
 
-        console.warn("updating Quantity");
+        // console.warn("updating Quantity");
 
         clearTimeout(this.delayTimer);
 
@@ -135,16 +141,23 @@ class QuantityMinMax extends HTMLElement {
      */
     delayedQuantityUpdate() {
 
-        this.delayTimer = setTimeout(()=>{
+        // console.log ("Inside update caller: " + this.getAttribute("quantity_ajax") );
+
+        if (this.getAttribute("quantity_ajax") === null) {
+            this.setAttribute("quantity_ajax",  this.getAttribute("quantity") );
+            return;
+        }
+
+        this.delayTimer = setTimeout( ()=>{
             
             // If inital set, then don't fire event to avoid needless ajax call.
-            let first_time = (this.getAttribute("quantity_ajax") === null);
+            let fire_ajax = (this.getAttribute("quantity_ajax") !== this.getAttribute("quantity"));
            
             this.setAttribute("quantity_ajax", this.getAttribute("quantity") );
 
-            if ( !first_time ) {
+            if ( fire_ajax ) {
                 this.dispatchEvent(this.quantityUpdatedEvent);
-                console.log("fire event");
+                // console.log("fire ajax event");
             }
             
 
@@ -154,7 +167,7 @@ class QuantityMinMax extends HTMLElement {
     }
 
 
-    updateStyle() {
+    componentStyle() {
         
         this.shadowRoot.querySelector('style').textContent = `
 
@@ -174,16 +187,25 @@ class QuantityMinMax extends HTMLElement {
 
           }
 
-          .wrapper div{
+          .wrapper div {
               margin:0;
               width:30px;
+              height:100%;
+              display:flex;
+              align-items:center;
+              justify-content:center;
               text-align:center;
+              cursor:pointer;
           }
+          .wrapper div * {
+                pointer-events:none;
+            }
 
           .wrapper div:nth-child(2) {
             width:40px;
             border-left:1px solid var(--border-color);
             border-right:1px solid var(--border-color);
+            cursor:none;
           }
 
           input{
