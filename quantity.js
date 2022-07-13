@@ -118,8 +118,6 @@ class QuantityMinMax extends HTMLElement {
 
         // console.warn("updating Quantity");
 
-        clearTimeout(this.delayTimer);
-
         const minQty     = isNaN( this.getAttribute("min") ) ? this.MIN_QTY : Number(this.getAttribute("min"));
         const maxQty     = isNaN( this.getAttribute("max") ) ? this.MAX_QTY : Number(this.getAttribute("max"));
         const currentQty = isNaN( this.getAttribute("quantity") ) ? "1" : Number(this.getAttribute("quantity"));
@@ -140,6 +138,8 @@ class QuantityMinMax extends HTMLElement {
      * Update the AJAX quanity after multiple clicks stopped on the quantity buttons
      */
     delayedQuantityUpdate() {
+
+        clearTimeout(this.delayTimer);
 
         // console.log ("Inside update caller: " + this.getAttribute("quantity_ajax") );
 
